@@ -151,6 +151,8 @@ class OverlayService : Service() {
             onShow = { request, _ -> controller.show(request) { } },
             onHide = { controller.hide() },
             defaultsProvider = { preferences.defaults() },
+            appVersion = BuildConfig.VERSION_NAME,
+            overlayPermission = { android.provider.Settings.canDrawOverlays(this) },
         )
         try {
             server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)

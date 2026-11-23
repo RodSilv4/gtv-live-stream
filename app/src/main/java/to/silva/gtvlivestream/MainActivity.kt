@@ -32,6 +32,7 @@ class MainActivity : Activity() {
 
     private lateinit var prefs: Prefs
     private val handler: Handler = Handler(Looper.getMainLooper())
+    private var healthGeneration: Int = 0
 
     private lateinit var statusText: TextView
     private lateinit var ipText: TextView
@@ -157,17 +158,17 @@ class MainActivity : Activity() {
     }
 
     private fun startService() {
-        if (!Settings.canDrawOverlays(this)) {
-            toast(R.string.toast_need_overlay)
-            return
-        }
         try {
             OverlayService.start(this)
         } catch (e: RuntimeException) {
             toast(R.string.toast_test_failed)
             return
         }
-        toast(R.string.toast_service_starting)
+        if (Settings.canDrawOverlays(this)) {
+            toast(R.string.toast_service_starting)
+        } else {
+            Toast.makeText(this, R.string.toast_starting_without_permission, Toast.LENGTH_LONG).show()
+        }
         refreshLater()
     }
 
@@ -196,6 +197,7 @@ class MainActivity : Activity() {
 
         Thread {
             var ok = false
+            var detail = ""
             var connection: HttpURLConnection? = null
             try {
                 val conn = URL("http://127.0.0.1:" + port + "/show").openConnection() as HttpURLConnection
@@ -210,15 +212,29 @@ class MainActivity : Activity() {
                     stream.write(body.toByteArray(Charsets.UTF_8))
                     stream.flush()
                 }
-                ok = conn.responseCode == HTTP_OK
+                val code = conn.responseCode
+                ok = code == HTTP_OK
+                if (!ok) {
+                    detail = "HTTP $code"
+                }
             } catch (e: Exception) {
+                detail = e.javaClass.simpleName + ": " + (e.message ?: "no message")
                 ok = false
             } finally {
                 connection?.disconnect()
             }
             val success = ok
+            val failureDetail = detail
             runOnUiThread {
-                toast(if (success) R.string.toast_test_sent else R.string.toast_test_failed)
+                if (success) {
+                    toast(R.string.toast_test_sent)
+                } else {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.toast_test_failed_detail, failureDetail),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
             }
         }.start()
     }
@@ -241,21 +257,45 @@ class MainActivity : Activity() {
         val addresses = deviceAddresses()
         val primary = addresses.firstOrNull() ?: "127.0.0.1"
 
-        val running = OverlayService.isRunning
-        val canOverlay = Settings.canDrawOverlays(this)
-        statusText.text = if (running && canOverlay) {
-            getString(R.string.status_running, primary, port)
-        } else {
-            getString(R.string.status_stopped)
-        }
-        if (!canOverlay) {
-            statusText.append("\n" + getString(R.string.status_needs_permission))
-        }
-
         ipText.text = if (addresses.isEmpty()) {
             ""
         } else {
             addresses.joinToString(", ") + " · " + getString(R.string.label_port) + " " + port
+        }
+        statusText.text = getString(R.string.status_checking)
+
+        val generation = ++healthGeneration
+        Thread {
+            val healthy = probeHealth(port)
+            runOnUiThread {
+                if (generation != healthGeneration) {
+                    return@runOnUiThread
+                }
+                val canOverlay = Settings.canDrawOverlays(this)
+                statusText.text = when {
+                    !healthy -> getString(R.string.status_offline, port)
+                    else -> getString(R.string.status_running, primary, port)
+                }
+                if (healthy && !canOverlay) {
+                    statusText.append("\n" + getString(R.string.status_needs_permission))
+                }
+            }
+        }.start()
+    }
+
+    /** Returns true when the local service answers /health on [port]. */
+    private fun probeHealth(port: Int): Boolean {
+        var connection: HttpURLConnection? = null
+        return try {
+            val conn = URL("http://127.0.0.1:" + port + "/health").openConnection() as HttpURLConnection
+            connection = conn
+            conn.connectTimeout = HEALTH_TIMEOUT_MS
+            conn.readTimeout = HEALTH_TIMEOUT_MS
+            conn.responseCode == HTTP_OK
+        } catch (e: Exception) {
+            false
+        } finally {
+            connection?.disconnect()
         }
     }
 
@@ -338,6 +378,7 @@ class MainActivity : Activity() {
         const val REFRESH_DELAY_MS: Long = 800
         const val CONNECT_TIMEOUT_MS: Int = 4000
         const val READ_TIMEOUT_MS: Int = 6000
+        const val HEALTH_TIMEOUT_MS: Int = 1500
         const val HTTP_OK: Int = 200
 
         const val TEST_STREAM_URL: String = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"

@@ -3,8 +3,13 @@
     <string name="app_name">GTV Live Stream</string>
 
     <string name="status_stopped">Service stopped</string>
+    <string name="status_checking">Checking service…</string>
+    <string name="status_offline">Service not responding on port %1$d</string>
     <string name="status_running">Service running on %1$s:%2$d</string>
+    <string name="status_running_no_permission">Service running on %1$s:%2$d</string>
     <string name="status_needs_permission">Overlay permission not granted</string>
+    <string name="toast_test_failed_detail">Test failed: %1$s</string>
+    <string name="toast_starting_without_permission">Starting service — grant \"Display over other apps\" to see the window</string>
 
     <string name="label_token">Token</string>
     <string name="label_port">Port</string>

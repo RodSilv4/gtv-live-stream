@@ -18,6 +18,8 @@ class HttpApiServer(
     private val onShow: (ShowRequest, () -> Unit) -> Unit,
     private val onHide: () -> Unit,
     private val defaultsProvider: () -> ShowDefaults,
+    private val appVersion: String,
+    private val overlayPermission: () -> Boolean,
 ) : NanoHTTPD(port) {
 
     private val tag: String = "HttpApiServer"
@@ -28,7 +30,7 @@ class HttpApiServer(
             when {
                 session.method == Method.GET && uri == "/health" -> handleHealth()
                 session.method == Method.POST && uri == "/show" -> handleShow(session)
-                session.method == Method.POST && uri == "/hide" -> handleHide()
+                session.method == Method.POST && uri == "/hide" -> handleHide(session)
                 else -> json(Response.Status.NOT_FOUND, """{"ok":false,"error":"not found"}""")
             }
         } catch (e: Exception) {
@@ -43,9 +45,14 @@ class HttpApiServer(
         } catch (e: RuntimeException) {
             false
         }
+        val canOverlay = try {
+            overlayPermission()
+        } catch (e: RuntimeException) {
+            false
+        }
         return json(
             Response.Status.OK,
-            """{"ok":true,"app":"gtv-live-stream","version":"0.1.0","playing":$playing,"port":$port}""",
+            """{"ok":true,"app":"gtv-live-stream","version":"$appVersion","playing":$playing,"port":$port,"overlayPermission":$canOverlay}""",
         )
     }
 
@@ -74,7 +81,10 @@ class HttpApiServer(
         }
     }
 
-    private fun handleHide(): Response {
+    private fun handleHide(session: IHTTPSession): Response {
+        if (!isAuthorized(session)) {
+            return unauthorized()
+        }
         onHide()
         return json(Response.Status.OK, """{"ok":true}""")
     }

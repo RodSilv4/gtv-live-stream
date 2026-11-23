@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GTV Live Stream</string>
+
+    <string name="status_stopped">Service stopped</string>
+    <string name="status_running">Service running on %1$s:%2$d</string>
+    <string name="status_needs_permission">Overlay permission not granted</string>
+
+    <string name="label_token">Token</string>
+    <string name="label_port">Port</string>
+    <string name="label_position">Default position</string>
+    <string name="label_width">Default width %</string>
+    <string name="label_height">Default height %</string>
+    <string name="label_duration">Default duration (s, 0 = until /hide)</string>
+    <string name="label_mute">Mute audio by default</string>
+    <string name="label_boot">Start on boot</string>
+
+    <string name="action_grant">Grant overlay permission</string>
+    <string name="action_start">Start service</string>
+    <string name="action_stop">Stop service</string>
+    <string name="action_test">Send test overlay</string>
+    <string name="action_copy_token">Copy token</string>
+    <string name="action_regen_token">New token</string>
+    <string name="action_save">Save defaults</string>
+
+    <string name="hint_token">Shared secret sent as X-Auth-Token</string>
+    <string name="hint_port">8765</string>
+    <string name="hint_percent">38</string>
+    <string name="hint_duration">40</string>
+
+    <string name="section_ha">Home Assistant rest_command</string>
+    <string name="toast_copied">Copied</string>
+    <string name="toast_saved">Saved</string>
+    <string name="toast_service_starting">Starting service…</string>
+    <string name="toast_service_stopping">Stopping service…</string>
+    <string name="toast_test_sent">Test overlay sent</string>
+    <string name="toast_test_failed">Test failed — is the service running?</string>
+    <string name="toast_need_overlay">Grant \"Display over other apps\" first</string>
+</resources>

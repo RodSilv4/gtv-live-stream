@@ -405,12 +405,7 @@ class OverlayController(private val context: Context) {
 
     private fun applyWindowLayout(view: FrameLayout, request: ShowRequest) {
         val params = layoutParams ?: buildLayoutParams(request) ?: return
-        val screen = screenSize()
-        val width = windowWidthPx(screen.first, request.widthPct)
-        val height = windowHeightPx(screen.second, request.heightPct, width)
-        params.width = width
-        params.height = height
-        applyGravity(params, request.position)
+        positionWindow(params, request)
         layoutParams = params
         try {
             windowManager.updateViewLayout(view, params)
@@ -428,53 +423,54 @@ class OverlayController(private val context: Context) {
             @Suppress("DEPRECATION")
             WindowManager.LayoutParams.TYPE_PHONE
         }
+        // No FLAG_LAYOUT_NO_LIMITS: the window must stay inside the screen, and absolute
+        // top-left offsets keep the right/bottom maths unambiguous.
         val flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
 
-        val screen = screenSize()
-        val width = windowWidthPx(screen.first, request.widthPct)
-        val height = windowHeightPx(screen.second, request.heightPct, width)
-
-        val params = WindowManager.LayoutParams(width, height, type, flags, PixelFormat.TRANSLUCENT)
+        val params = WindowManager.LayoutParams(0, 0, type, flags, PixelFormat.TRANSLUCENT)
         params.gravity = Gravity.TOP or Gravity.LEFT
-        applyGravity(params, request.position)
         params.setTitle("gtv-live-stream-overlay")
         params.packageName = context.packageName
         params.windowAnimations = 0
         params.alpha = 1f
+        positionWindow(params, request)
         return params
     }
 
     /**
-     * Positions the window with 24dp margins. LEFT/RIGHT are used rather than START/END so the
-     * offsets below stay valid regardless of layout direction.
+     * Places the window with [Gravity.TOP] + [Gravity.LEFT] and absolute offsets, so positive
+     * x/y always move inward. Using RIGHT/BOTTOM gravity with offsets is what pushed an early
+     * build partly off-screen on TVs that report overscan.
      */
-    private fun applyGravity(params: WindowManager.LayoutParams, position: String) {
-        val margin = dp(context.resources.displayMetrics.density, WINDOW_MARGIN_DP)
-        params.gravity = when (position) {
-            "top-left" -> Gravity.TOP or Gravity.LEFT
-            "top-right" -> Gravity.TOP or Gravity.RIGHT
-            "bottom-left" -> Gravity.BOTTOM or Gravity.LEFT
-            "center" -> Gravity.CENTER
-            else -> Gravity.BOTTOM or Gravity.RIGHT
-        }
-        params.x = when (position) {
+    private fun positionWindow(params: WindowManager.LayoutParams, request: ShowRequest) {
+        val screen = screenSize()
+        val density = context.resources.displayMetrics.density
+        // TV overscan eats the outer ~2% on many panels; keep the card inside that safe area.
+        val margin = maxOf(dp(density, WINDOW_MARGIN_DP), (minOf(screen.first, screen.second) * 0.02f).toInt())
+
+        val width = windowWidthPx(screen.first, request.widthPct, margin)
+        val height = windowHeightPx(screen.second, request.heightPct, width, margin)
+
+        params.width = width
+        params.height = height
+        params.gravity = Gravity.TOP or Gravity.LEFT
+        params.x = when (request.position) {
             "top-left", "bottom-left" -> margin
-            "top-right", "bottom-right" -> -margin
-            else -> 0
+            "top-right", "bottom-right" -> screen.first - width - margin
+            else -> (screen.first - width) / 2
         }
-        params.y = when (position) {
+        params.y = when (request.position) {
             "top-left", "top-right" -> margin
-            "bottom-left", "bottom-right" -> -margin
-            else -> 0
+            "bottom-left", "bottom-right" -> screen.second - height - margin
+            else -> (screen.second - height) / 2
         }
     }
 
-    private fun windowWidthPx(screenWidth: Int, widthPct: Int): Int {
+    private fun windowWidthPx(screenWidth: Int, widthPct: Int, margin: Int): Int {
         val density = context.resources.displayMetrics.density
         val minWidth = dp(density, MIN_WIDTH_DP)
-        val maxWidth = (screenWidth - 2 * dp(density, WINDOW_MARGIN_DP)).coerceAtLeast(minWidth)
+        val maxWidth = (screenWidth - 2 * margin).coerceAtLeast(minWidth)
         return (screenWidth * widthPct / 100).coerceIn(minWidth, maxWidth)
     }
 
@@ -482,16 +478,17 @@ class OverlayController(private val context: Context) {
      * Height follows the media aspect ratio, capped by the requested percentage of the screen.
      * Card chrome (header, padding, gap) is added on top so the video area itself stays 16:9.
      */
-    private fun windowHeightPx(screenHeight: Int, heightPct: Int, width: Int): Int {
+    private fun windowHeightPx(screenHeight: Int, heightPct: Int, width: Int, margin: Int): Int {
         val density = context.resources.displayMetrics.density
         val chrome = dp(density, CARD_PADDING_DP * 2 + HEADER_HEIGHT_DP + HEADER_GAP_DP)
         val minVideo = dp(density, MIN_VIDEO_HEIGHT_DP)
+        val maxWindow = minOf(screenHeight * heightPct / 100, screenHeight - 2 * margin)
+            .coerceAtLeast(chrome + minVideo)
         val aspect = if (videoWidthPx > 0 && videoHeightPx > 0) {
             videoHeightPx.toFloat() / videoWidthPx.toFloat()
         } else {
             9f / 16f
         }
-        val maxWindow = (screenHeight * heightPct / 100).coerceAtLeast(chrome + minVideo)
         val videoHeight = (width * aspect).toInt()
             .coerceAtMost(maxWindow - chrome)
             .coerceAtLeast(minVideo)

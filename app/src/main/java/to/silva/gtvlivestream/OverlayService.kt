@@ -150,7 +150,7 @@ class OverlayService : Service() {
         val server = HttpApiServer(
             port = preferences.port,
             tokenProvider = { preferences.token },
-            isPlaying = { controller.isShowing },
+            statusProvider = { controller.status() },
             onShow = { request, _ -> controller.show(request) { } },
             onHide = { controller.hide() },
             defaultsProvider = { preferences.defaults() },

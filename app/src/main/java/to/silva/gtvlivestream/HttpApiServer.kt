@@ -2,6 +2,7 @@ package to.silva.gtvlivestream
 
 import android.util.Log
 import fi.iki.elonen.NanoHTTPD
+import org.json.JSONObject
 import java.io.IOException
 import java.security.MessageDigest
 
@@ -14,7 +15,7 @@ import java.security.MessageDigest
 class HttpApiServer(
     private val port: Int,
     private val tokenProvider: () -> String,
-    private val isPlaying: () -> Boolean,
+    private val statusProvider: () -> Map<String, Any?>,
     private val onShow: (ShowRequest, () -> Unit) -> Unit,
     private val onHide: () -> Unit,
     private val defaultsProvider: () -> ShowDefaults,
@@ -40,20 +41,26 @@ class HttpApiServer(
     }
 
     private fun handleHealth(): Response {
-        val playing = try {
-            isPlaying()
+        val status = try {
+            statusProvider()
         } catch (e: RuntimeException) {
-            false
+            emptyMap<String, Any?>()
         }
         val canOverlay = try {
             overlayPermission()
         } catch (e: RuntimeException) {
             false
         }
-        return json(
-            Response.Status.OK,
-            """{"ok":true,"app":"gtv-live-stream","version":"$appVersion","playing":$playing,"port":$port,"overlayPermission":$canOverlay}""",
-        )
+        val body = JSONObject()
+        body.put("ok", true)
+        body.put("app", "gtv-live-stream")
+        body.put("version", appVersion)
+        body.put("port", port)
+        body.put("overlayPermission", canOverlay)
+        for ((key, value) in status) {
+            body.put(key, value ?: JSONObject.NULL)
+        }
+        return json(Response.Status.OK, body.toString())
     }
 
     private fun handleShow(session: IHTTPSession): Response {

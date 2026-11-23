@@ -9,5 +9,5 @@
   "issue_tracker": "https://github.com/RodSilv4/gtv-live-stream/issues",
   "loggers": ["custom_components.gtv_live_stream"],
   "requirements": [],
-  "version": "0.2.1"
+  "version": "0.2.2"
 }

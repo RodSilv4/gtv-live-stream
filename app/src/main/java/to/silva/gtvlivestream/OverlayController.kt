@@ -13,6 +13,7 @@ import android.text.TextUtils
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Gravity
+import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -27,8 +28,6 @@ import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.rtsp.RtspMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.PlayerView
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,7 +48,7 @@ class OverlayController(private val context: Context) {
 
     private var player: ExoPlayer? = null
     private var root: FrameLayout? = null
-    private var playerView: PlayerView? = null
+    private var textureView: TextureView? = null
     private var titleView: TextView? = null
     private var subtitleView: TextView? = null
     private var clockView: TextView? = null
@@ -60,11 +59,25 @@ class OverlayController(private val context: Context) {
     private var videoWidthPx: Int = 0
     private var videoHeightPx: Int = 0
 
+    private var playbackState: String = "idle"
+    private var renderedFirstFrame: Boolean = false
+    private var lastError: String? = null
+
     @Volatile
     private var attached: Boolean = false
 
     val isShowing: Boolean
         get() = attached
+
+    /** Snapshot for /health: tells a remote caller whether frames actually rendered. */
+    fun status(): Map<String, Any?> = mapOf(
+        "playing" to attached,
+        "state" to playbackState,
+        "videoWidth" to videoWidthPx,
+        "videoHeight" to videoHeightPx,
+        "renderedFirstFrame" to renderedFirstFrame,
+        "lastError" to lastError,
+    )
 
     private val hideRunnable: Runnable = Runnable { hideInternal(notify = true) }
 
@@ -84,8 +97,26 @@ class OverlayController(private val context: Context) {
             }
         }
 
+        override fun onPlaybackStateChanged(state: Int) {
+            playbackState = when (state) {
+                Player.STATE_IDLE -> "idle"
+                Player.STATE_BUFFERING -> "buffering"
+                Player.STATE_READY -> "ready"
+                Player.STATE_ENDED -> "ended"
+                else -> "unknown"
+            }
+            if (state == Player.STATE_IDLE) {
+                renderedFirstFrame = false
+            }
+        }
+
+        override fun onRenderedFirstFrame() {
+            renderedFirstFrame = true
+        }
+
         override fun onPlayerError(error: PlaybackException) {
-            Log.w(TAG, "playback error: ${error.errorCodeName}")
+            lastError = error.errorCodeName + ": " + (error.message ?: "").take(180)
+            Log.w(TAG, "playback error: " + error.errorCodeName)
         }
     }
 
@@ -111,11 +142,19 @@ class OverlayController(private val context: Context) {
             attached = false
             currentRequest = null
             onClosedCallback = null
-            playerView?.setPlayer(null)
+            player?.let { active ->
+                textureView?.let { view ->
+                    try {
+                        active.clearVideoTextureView(view)
+                    } catch (e: RuntimeException) {
+                        Log.w(TAG, "clearVideoTextureView failed", e)
+                    }
+                }
+            }
             player?.removeListener(playerListener)
             player?.release()
             player = null
-            playerView = null
+            textureView = null
             titleView = null
             subtitleView = null
             clockView = null
@@ -137,6 +176,9 @@ class OverlayController(private val context: Context) {
     private fun showInternal(request: ShowRequest, onClosed: () -> Unit) {
         currentRequest = request
         onClosedCallback = onClosed
+        lastError = null
+        renderedFirstFrame = false
+        playbackState = "idle"
 
         val exoPlayer = ensurePlayer()
         val view = ensureViews()
@@ -172,7 +214,7 @@ class OverlayController(private val context: Context) {
             val created = PlayerFactory.build(context)
             created.addListener(playerListener)
             player = created
-            playerView?.setPlayer(created)
+            textureView?.let { created.setVideoTextureView(it) }
             created
         } catch (e: RuntimeException) {
             Log.e(TAG, "could not create player", e)
@@ -283,13 +325,12 @@ class OverlayController(private val context: Context) {
             ),
         )
 
-        val video = PlayerView(context).apply {
-            setUseController(false)
-            setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT)
-            setBackgroundColor(Color.BLACK)
+        // TextureView, not SurfaceView: SurfaceView inside a TYPE_APPLICATION_OVERLAY window
+        // renders black on several Android TV devices.
+        val video = TextureView(context).apply {
             isClickable = true
         }
-        playerView = video
+        textureView = video
         column.addView(
             video,
             LinearLayout.LayoutParams(
@@ -306,7 +347,7 @@ class OverlayController(private val context: Context) {
         }
 
         root = rootLayout
-        player?.let { video.setPlayer(it) }
+        player?.let { it.setVideoTextureView(video) }
         return rootLayout
     }
 

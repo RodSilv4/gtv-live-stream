@@ -74,6 +74,9 @@ Empty body or `{}`. Response `200 {"ok":true}`. No-op if nothing is showing.
 
 `200 {"ok":true,"app":"gtv-live-stream","version":"0.1.0","playing":false,"port":8765}`
 
+Also reports diagnostics for remote debugging: `state` (`idle|buffering|ready|ended`), `videoWidth`,
+`videoHeight`, `renderedFirstFrame` and `lastError` (player error code + message, if any).
+
 ## Overlay design
 
 - Rounded 16dp card, black `#0B0F14` at 92% opacity, 2dp accent border `#34D399`.

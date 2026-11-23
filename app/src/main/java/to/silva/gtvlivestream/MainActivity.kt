@@ -39,6 +39,7 @@ class MainActivity : Activity() {
     private lateinit var statusText: TextView
     private lateinit var statusDot: View
     private lateinit var ipText: TextView
+    private lateinit var versionText: TextView
     private lateinit var portInput: EditText
     private lateinit var tokenInput: EditText
     private lateinit var copyTokenButton: Button
@@ -64,6 +65,7 @@ class MainActivity : Activity() {
         statusText = findViewById(R.id.statusText)
         statusDot = findViewById(R.id.statusDot)
         ipText = findViewById(R.id.ipText)
+        versionText = findViewById(R.id.versionText)
         portInput = findViewById(R.id.portInput)
         tokenInput = findViewById(R.id.tokenInput)
         copyTokenButton = findViewById(R.id.copyTokenButton)
@@ -90,6 +92,7 @@ class MainActivity : Activity() {
         positionSpinner.adapter = adapter
 
         populateFields()
+        versionText.text = getString(R.string.version_label, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
         maybeStartServiceOnLaunch()
 
         saveButton.setOnClickListener { saveSettings() }

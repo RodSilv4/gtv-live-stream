@@ -381,7 +381,10 @@ class OverlayController(private val context: Context) {
             exoPlayer.volume = if (request.mute) 0f else 1f
             val item = MediaItem.fromUri(Uri.parse(request.url))
             val source = if (request.url.lowercase(Locale.US).startsWith("rtsp")) {
-                RtspMediaSource.Factory().createMediaSource(item)
+                // Most cameras/TVs drop RTP over UDP; TCP interleaving is the reliable path.
+                RtspMediaSource.Factory()
+                    .setForceUseRtpTcp(true)
+                    .createMediaSource(item)
             } else {
                 DefaultMediaSourceFactory(context).createMediaSource(item)
             }

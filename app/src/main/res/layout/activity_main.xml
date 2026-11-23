@@ -11,14 +11,30 @@
         android:orientation="vertical"
         android:padding="32dp">
 
-        <TextView
-            android:id="@+id/statusText"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/status_stopped"
-            android:textColor="@color/accent"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/statusDot"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/status_dot"
+                android:contentDescription="@string/status_indicator" />
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/status_stopped"
+                android:textColor="@color/accent"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/ipText"

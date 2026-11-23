@@ -6,11 +6,13 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
@@ -35,6 +37,7 @@ class MainActivity : Activity() {
     private var healthGeneration: Int = 0
 
     private lateinit var statusText: TextView
+    private lateinit var statusDot: View
     private lateinit var ipText: TextView
     private lateinit var portInput: EditText
     private lateinit var tokenInput: EditText
@@ -59,6 +62,7 @@ class MainActivity : Activity() {
         prefs = Prefs(this)
 
         statusText = findViewById(R.id.statusText)
+        statusDot = findViewById(R.id.statusDot)
         ipText = findViewById(R.id.ipText)
         portInput = findViewById(R.id.portInput)
         tokenInput = findViewById(R.id.tokenInput)
@@ -263,6 +267,7 @@ class MainActivity : Activity() {
             addresses.joinToString(", ") + " · " + getString(R.string.label_port) + " " + port
         }
         statusText.text = getString(R.string.status_checking)
+        setStatusColor(R.color.status_unknown)
 
         val generation = ++healthGeneration
         Thread {
@@ -276,11 +281,23 @@ class MainActivity : Activity() {
                     !healthy -> getString(R.string.status_offline, port)
                     else -> getString(R.string.status_running, primary, port)
                 }
+                setStatusColor(
+                    when {
+                        !healthy -> R.color.status_stopped
+                        !canOverlay -> R.color.status_warning
+                        else -> R.color.status_running
+                    },
+                )
                 if (healthy && !canOverlay) {
                     statusText.append("\n" + getString(R.string.status_needs_permission))
                 }
             }
         }.start()
+    }
+
+    /** Traffic-light dot: green running, amber running without overlay permission, red offline. */
+    private fun setStatusColor(colorRes: Int) {
+        statusDot.backgroundTintList = ColorStateList.valueOf(getColor(colorRes))
     }
 
     /** Returns true when the local service answers /health on [port]. */

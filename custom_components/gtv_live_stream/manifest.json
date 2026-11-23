@@ -1,0 +1,13 @@
+{
+  "domain": "gtv_live_stream",
+  "name": "GTV Live Stream",
+  "codeowners": ["@RodSilv4"],
+  "config_flow": true,
+  "documentation": "https://github.com/RodSilv4/gtv-live-stream",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/RodSilv4/gtv-live-stream/issues",
+  "loggers": ["custom_components.gtv_live_stream"],
+  "requirements": [],
+  "version": "0.2.0"
+}

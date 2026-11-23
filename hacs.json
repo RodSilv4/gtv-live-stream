@@ -1,0 +1,7 @@
+{
+  "name": "GTV Live Stream",
+  "render_readme": true,
+  "homeassistant": "2024.6.0",
+  "hide_default_branch": false,
+  "zip_release": false
+}

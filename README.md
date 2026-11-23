@@ -60,8 +60,10 @@ curl -s -X POST http://<tv-ip>:8765/hide -H "X-Auth-Token: $TOKEN"
 `/show` replaces any window already on screen; `duration_s: 0` keeps it until `/hide`. Sources:
 RTSP, HLS (`.m3u8`) and progressive MP4.
 
-[`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md) has a Home Assistant `rest_command` example plus
-other clients. The app itself never talks to Home Assistant.
+[`docs/HACS.md`](docs/HACS.md) covers the bundled **Home Assistant integration** (HACS): each TV
+becomes a device with `gtv_live_stream.show` / `hide` services and online/playing sensors — no YAML.
+[`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md) has the plain `rest_command` version plus other
+clients. The app itself never talks to Home Assistant.
 
 ## Limitations
 

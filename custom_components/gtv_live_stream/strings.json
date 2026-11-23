@@ -1,0 +1,72 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to a TV",
+        "description": "Enter the address and token shown in the GTV Live Stream app on the TV.",
+        "data": {
+          "host": "Host",
+          "name": "Name",
+          "port": "Port",
+          "token": "Token"
+        },
+        "data_description": {
+          "name": "Optional friendly name, e.g. Master Bedroom TV.",
+          "token": "Shown on the TV app's settings screen."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach the TV. Check the IP, port and that the service is running.",
+      "invalid_auth": "The TV rejected the token.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This TV is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "GTV Live Stream options",
+        "data": {
+          "port": "Port",
+          "token": "Token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach the TV.",
+      "invalid_auth": "The TV rejected the token."
+    }
+  },
+  "services": {
+    "show": {
+      "name": "Show overlay",
+      "description": "Shows a live stream in a corner window on the TV.",
+      "fields": {
+        "url": {
+          "name": "Stream URL",
+          "description": "RTSP, HLS (.m3u8) or progressive MP4 URL the TV can reach."
+        },
+        "title": {"name": "Title"},
+        "subtitle": {"name": "Subtitle"},
+        "position": {"name": "Position"},
+        "width_pct": {"name": "Width (% of screen)"},
+        "height_pct": {"name": "Height (% of screen)"},
+        "duration_s": {"name": "Duration (seconds, 0 = until hide)"},
+        "mute": {"name": "Mute audio"}
+      }
+    },
+    "hide": {
+      "name": "Hide overlay",
+      "description": "Removes the overlay window."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "online": {"name": "Online"},
+      "playing": {"name": "Playing"}
+    }
+  }
+}

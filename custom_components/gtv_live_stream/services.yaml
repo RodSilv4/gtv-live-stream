@@ -1,0 +1,63 @@
+show:
+  target:
+    device:
+      integration: gtv_live_stream
+    entity:
+      integration: gtv_live_stream
+  fields:
+    url:
+      required: true
+      example: "rtsp://192.168.1.10:554/stream1"
+      selector:
+        text:
+    title:
+      example: "Front Door"
+      selector:
+        text:
+    subtitle:
+      example: "Person detected"
+      selector:
+        text:
+    position:
+      example: "bottom-right"
+      selector:
+        select:
+          options:
+            - top-left
+            - top-right
+            - bottom-left
+            - bottom-right
+            - center
+    width_pct:
+      example: 38
+      selector:
+        number:
+          min: 15
+          max: 100
+          unit_of_measurement: "%"
+    height_pct:
+      example: 38
+      selector:
+        number:
+          min: 15
+          max: 100
+          unit_of_measurement: "%"
+    duration_s:
+      example: 40
+      selector:
+        number:
+          min: 0
+          max: 600
+          unit_of_measurement: s
+    mute:
+      example: true
+      selector:
+        boolean:
+
+hide:
+  target:
+    device:
+      integration: gtv_live_stream
+    entity:
+      integration: gtv_live_stream
+  fields: {}

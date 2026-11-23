@@ -54,3 +54,27 @@ those artifacts are **not** suitable for distribution.
 
 `versionCode` and `versionName` live in `app/build.gradle.kts`. Bump both for every Play upload;
 `versionCode` must increase monotonically.
+
+## Releases and the stable download URL
+
+The TV's Downloader app (and anything else) should point at:
+
+```
+https://github.com/RodSilv4/gtv-live-stream/releases/latest/download/gtv-live-stream.apk
+```
+
+That URL is stable because GitHub resolves `releases/latest/download/<name>` to the newest
+non-draft, non-prerelease release that carries an asset with that exact filename. The release
+workflow (`.github/workflows/release.yml`) enforces it:
+
+- triggered by pushing a `v*` tag;
+- builds `assembleRelease`;
+- uploads `gtv-live-stream.apk` (fixed name, `--clobber`) and a versioned copy
+  `gtv-live-stream-<version>.apk`.
+
+If you create a release by hand, it **must** include an asset named exactly
+`gtv-live-stream.apk`, and it must not be marked prerelease.
+
+For a friendlier thing to type on a TV remote, add a redirect in front of it (e.g. an NPM proxy
+host for `gtv.silva.to` returning `302` to the URL above). Downloader's numeric "codes" are
+assigned by AFTVnews, not generated per project, so they are not an option.

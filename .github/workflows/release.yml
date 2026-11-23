@@ -1,0 +1,53 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK packages
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" >/dev/null
+
+      - name: Build release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --console=plain
+
+      - name: Publish assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="$GITHUB_REF_NAME"
+          VERSION="${TAG#v}"
+
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" --title "$TAG" --generate-notes
+
+          # Fixed filename -> /releases/latest/download/gtv-live-stream.apk never changes.
+          cp app/build/outputs/apk/release/app-release.apk gtv-live-stream.apk
+          cp app/build/outputs/apk/release/app-release.apk "gtv-live-stream-${VERSION}.apk"
+
+          gh release upload "$TAG" gtv-live-stream.apk --clobber
+          gh release upload "$TAG" "gtv-live-stream-${VERSION}.apk" --clobber
+
+      - name: Summary
+        run: |
+          echo "Stable URL: https://github.com/${{ github.repository }}/releases/latest/download/gtv-live-stream.apk" >> "$GITHUB_STEP_SUMMARY"

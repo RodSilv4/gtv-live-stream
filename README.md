@@ -25,7 +25,14 @@ MVP: `assembleDebug` and the 12 parser unit tests pass in CI. See
 
 ## Install
 
-Sideload the APK from [Releases](https://github.com/RodSilv4/gtv-live-stream/releases), or build it
+**Stable download URL** (always the latest release, safe to bookmark or type into the TV's
+Downloader app):
+
+```
+https://github.com/RodSilv4/gtv-live-stream/releases/latest/download/gtv-live-stream.apk
+```
+
+Every release attaches an asset with that exact filename, so the URL never changes. Or build it
 yourself:
 
 ```bash

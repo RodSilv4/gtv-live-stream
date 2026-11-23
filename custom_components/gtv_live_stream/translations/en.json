@@ -43,11 +43,15 @@
   "services": {
     "show": {
       "name": "Show overlay",
-      "description": "Shows a live stream in a corner window on the TV.",
+      "description": "Shows a live stream in a corner window on one or more TVs. Without a target it shows on every configured TV.",
       "fields": {
+        "camera": {
+          "name": "Camera",
+          "description": "Camera entity with a stream source. Ignored when URL is set."
+        },
         "url": {
           "name": "Stream URL",
-          "description": "RTSP, HLS (.m3u8) or progressive MP4 URL the TV can reach."
+          "description": "RTSP, HLS (.m3u8) or progressive MP4 URL the TV can reach. Required unless camera is set."
         },
         "title": {"name": "Title"},
         "subtitle": {"name": "Subtitle"},

@@ -25,6 +25,38 @@ The same repo ships a custom integration so Home Assistant can talk to the TV di
    the TV app.
 5. Repeat for each TV.
 
+## Many TVs, many cameras
+
+- **TVs**: add one integration entry per TV. `gtv_live_stream.show` targets devices; select several
+  in one action to show the same camera on multiple TVs, or omit the target entirely to show on
+  **every** configured TV.
+- **Cameras**: pass either `camera` (a camera entity with a stream source — the entity picker in
+  the automation UI) or `url` (any RTSP/HLS/MP4). `camera` is resolved to its stream URL, so one
+  service call works for every camera you have.
+
+```yaml
+# Whole house, camera entity
+- action: gtv_live_stream.show
+  data:
+    camera: camera.front_door
+    title: Front Door
+    duration_s: 40
+
+# Two specific TVs
+- action: gtv_live_stream.show
+  target:
+    device_id:
+      - 0123456789abcdef
+      - fedcba9876543210
+  data:
+    camera: camera.front_door
+```
+
+Frigate's HA integration currently exposes no stream source for its cameras, so `camera:` on those
+entities raises a clear error. Point a **Generic Camera** at the go2rtc restream
+(`rtsp://<frigate-host>:8554/front_cam_sub`) once per camera; then every camera is selectable by
+entity and HA gets working live view as a bonus.
+
 ## Use it
 
 ```yaml

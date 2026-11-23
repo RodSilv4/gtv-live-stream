@@ -71,6 +71,9 @@ class OverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Every start request (boot, app launch, sticky restart) must re-assert the
+        // foreground notification, or Android 12+ kills the service.
+        startForegroundSafely()
         if (intent?.action == ACTION_STOP) {
             stopSelf()
             return START_NOT_STICKY

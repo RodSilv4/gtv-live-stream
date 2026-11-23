@@ -11,6 +11,7 @@ from typing import Any
 
 import probatio
 
+from homeassistant.components.camera import async_get_stream_source
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_DEVICE_ID,
@@ -29,6 +30,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .client import GtvAuthError, GtvCannotConnect, GtvClient, GtvError
 from .const import (
+    ATTR_CAMERA,
     ATTR_DURATION_S,
     ATTR_HEIGHT_PCT,
     ATTR_MUTE,
@@ -56,7 +58,8 @@ TARGET_FIELD = probatio.Any(str, list)
 
 SHOW_SCHEMA = probatio.Schema(
     {
-        probatio.Required(ATTR_URL): str,
+        probatio.Optional(ATTR_URL): str,
+        probatio.Optional(ATTR_CAMERA): str,
         probatio.Optional(ATTR_TITLE): str,
         probatio.Optional(ATTR_SUBTITLE): str,
         probatio.Optional(ATTR_POSITION): probatio.In(POSITIONS),
@@ -140,7 +143,20 @@ def _async_register_services(hass: HomeAssistant) -> None:
         return
 
     async def async_show(call: ServiceCall) -> None:
-        payload: dict[str, Any] = {ATTR_URL: call.data[ATTR_URL]}
+        url = call.data.get(ATTR_URL)
+        camera_entity = call.data.get(ATTR_CAMERA)
+        if not url and not camera_entity:
+            raise ServiceValidationError("Provide either url or camera")
+
+        if not url:
+            url = await async_get_stream_source(hass, camera_entity)
+            if not url:
+                raise HomeAssistantError(
+                    f"{camera_entity} has no stream source. Use a stream-capable camera "
+                    "(for example a Generic Camera pointed at go2rtc) or pass url."
+                )
+
+        payload: dict[str, Any] = {ATTR_URL: url}
         for field in PAYLOAD_FIELDS:
             if field in call.data and call.data[field] is not None:
                 payload[field] = call.data[field]
@@ -204,10 +220,10 @@ def _coordinators_for_call(hass: HomeAssistant, call: ServiceCall) -> list[GtvCo
 
     if not entries:
         all_entries = hass.config_entries.async_entries(DOMAIN)
-        if len(all_entries) == 1:
-            entries = all_entries
-        else:
-            raise ServiceValidationError("Target a specific TV with device_id or entity_id")
+        if not all_entries:
+            raise ServiceValidationError("No GTV Live Stream TVs are configured")
+        # No target: act on every configured TV (whole-house popups).
+        entries = list(all_entries)
 
     coordinators = [hass.data[DOMAIN].get(entry.entry_id) for entry in entries]
     resolved = [coordinator for coordinator in coordinators if coordinator is not None]

@@ -15,6 +15,7 @@ SERVICE_SHOW = "show"
 SERVICE_HIDE = "hide"
 
 ATTR_URL = "url"
+ATTR_CAMERA = "camera"
 ATTR_TITLE = "title"
 ATTR_SUBTITLE = "subtitle"
 ATTR_POSITION = "position"

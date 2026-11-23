@@ -5,8 +5,12 @@ show:
     entity:
       integration: gtv_live_stream
   fields:
+    camera:
+      example: "camera.front_cam"
+      selector:
+        entity:
+          domain: camera
     url:
-      required: true
       example: "rtsp://192.168.1.10:554/stream1"
       selector:
         text:

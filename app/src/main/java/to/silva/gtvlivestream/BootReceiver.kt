@@ -7,14 +7,14 @@ import android.provider.Settings
 import android.util.Log
 
 /**
- * Brings [OverlayService] back after a reboot or a quick-boot power cycle, but only when the user
- * has asked for it and the overlay permission is still granted.
+ * Brings [OverlayService] up after a reboot, a quick-boot power cycle, or an app update, but only
+ * when the user has asked for it and the overlay permission is still granted.
  */
 class BootReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
-        if (action != Intent.ACTION_BOOT_COMPLETED && action != ACTION_QUICKBOOT_POWERON) {
+        if (action !in START_ACTIONS) {
             return
         }
         val prefs = Prefs(context)
@@ -27,6 +27,7 @@ class BootReceiver : BroadcastReceiver() {
         }
         try {
             OverlayService.start(context)
+            Log.i(TAG, "service start requested after $action")
         } catch (e: IllegalStateException) {
             Log.e(TAG, "could not restart service", e)
         } catch (e: SecurityException) {
@@ -37,5 +38,11 @@ class BootReceiver : BroadcastReceiver() {
     private companion object {
         const val TAG: String = "BootReceiver"
         const val ACTION_QUICKBOOT_POWERON: String = "android.intent.action.QUICKBOOT_POWERON"
+
+        val START_ACTIONS: Set<String> = setOf(
+            Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+            ACTION_QUICKBOOT_POWERON,
+        )
     }
 }

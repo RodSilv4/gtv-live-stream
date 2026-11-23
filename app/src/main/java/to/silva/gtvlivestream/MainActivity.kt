@@ -90,6 +90,7 @@ class MainActivity : Activity() {
         positionSpinner.adapter = adapter
 
         populateFields()
+        maybeStartServiceOnLaunch()
 
         saveButton.setOnClickListener { saveSettings() }
         grantButton.setOnClickListener { grantOverlayPermission() }
@@ -158,6 +159,21 @@ class MainActivity : Activity() {
             startActivity(intent)
         } catch (e: ActivityNotFoundException) {
             toast(R.string.toast_need_overlay)
+        }
+    }
+
+    /** The receiver is meant to run headless: opening the app brings the service up by itself. */
+    private fun maybeStartServiceOnLaunch() {
+        if (!prefs.startOnBoot) {
+            return
+        }
+        if (!Settings.canDrawOverlays(this)) {
+            return
+        }
+        try {
+            OverlayService.start(this)
+        } catch (e: RuntimeException) {
+            // Starting from a foreground activity should always be allowed; ignore if not.
         }
     }
 

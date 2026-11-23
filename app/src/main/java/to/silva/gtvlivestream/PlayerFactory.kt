@@ -15,7 +15,8 @@ object PlayerFactory {
 
     fun build(context: Context): ExoPlayer {
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(1500, 8000, 500, 800)
+            // Keep the live edge close: a deep buffer is what turns RTSP into a 10s-delayed feed.
+            .setBufferDurationsMs(800, 2000, 300, 400)
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 

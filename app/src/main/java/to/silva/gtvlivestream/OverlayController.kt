@@ -379,7 +379,17 @@ class OverlayController(private val context: Context) {
         return try {
             exoPlayer.setAudioAttributes(AudioAttributes.DEFAULT, /* handleAudioFocus = */ !request.mute)
             exoPlayer.volume = if (request.mute) 0f else 1f
-            val item = MediaItem.fromUri(Uri.parse(request.url))
+            val item = MediaItem.Builder()
+                .setUri(Uri.parse(request.url))
+                // Stay within ~0.5s of the live edge; speed up slightly to catch up when behind.
+                .setLiveConfiguration(
+                    MediaItem.LiveConfiguration.Builder()
+                        .setTargetOffsetMs(500)
+                        .setMinPlaybackSpeed(0.96f)
+                        .setMaxPlaybackSpeed(1.08f)
+                        .build(),
+                )
+                .build()
             val source = if (request.url.lowercase(Locale.US).startsWith("rtsp")) {
                 // Most cameras/TVs drop RTP over UDP; TCP interleaving is the reliable path.
                 RtspMediaSource.Factory()
